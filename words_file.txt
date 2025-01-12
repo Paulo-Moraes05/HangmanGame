@@ -1,0 +1,7 @@
+xbox
+playstation
+computer
+vscode
+pycharm
+programming 
+coding
