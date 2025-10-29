@@ -1,18 +1,90 @@
-name: GitHub Actions Demo
-run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
-on: [push]
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
 jobs:
-  Explore-GitHub-Actions:
+  sbom_and_scan:
     runs-on: ubuntu-latest
+    services:
+      docker:
+        image: docker:19.03.12
+
     steps:
-      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
-      - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
-      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
-      - name: Check out repository code
+      - name: Checkout repository
         uses: actions/checkout@v5
-      - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
-      - run: echo "🖥️ The workflow is now ready to test your code on the runner."
-      - name: List files in the repository
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Generate SBOM using Syft
         run: |
-          ls ${{ github.workspace }}
-      - run: echo "🍏 This job's status is ${{ job.status }}."
+          docker run --rm -v ${{ github.workspace }}:/project ghcr.io/anchore/syft:latest mathworks/matlab:latest -o json > ${{ github.workspace }}/sbom.json
+
+      - name: Vulnerability Scan using Grype
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/project ghcr.io/anchore/syft:latest sbom:/project/sbom.json -o json > ${{ github.workspace }}/vulnerabilities.json
+      
+      - name: Upload SBOM and Vulnerabilities
+        uses: actions/upload-artifact@v4
+        with:
+          name: SBOM-and-Vulnerabilities
+          path: |
+            ${{ github.workspace }}/sbom.json
+            ${{ github.workspace }}/vulnerabilities.json
+
+  run_matlab_commands:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup MATLAB
+        uses: matlab-actions/setup-matlab@v2
+        with:
+          license: ${{ secrets.MLM_LICENSE_FILE }}  # Create secret configured with your own license number
+
+      - name: Run MATLAB command
+        run: |
+          matlab -batch "mycommand"
+
+      - name: Run MATLAB tests
+        run: |
+          matlab -batch "results = runtests('IncludeSubfolders',true); assertSuccess(results);"
+
+      - name: Generate Test Artifacts
+        run: |
+          echo 'Creating and running MATLAB tests with Artifacts'
+          cat <<- 'BLOCK' > runAllTests.m
+            import matlab.unittest.TestRunner
+            import matlab.unittest.Verbosity
+            import matlab.unittest.plugins.CodeCoveragePlugin
+            import matlab.unittest.plugins.XMLPlugin
+            import matlab.unittest.codecoverage.CoberturaFormat
+            suite = testsuite(pwd, 'IncludeSubfolders',true);
+            [~,~] = mkdir('artifacts')
+            runner = TestRunner.withTextOutput('OutputDetail',Verbosity.Detailed);
+            runner.addPlugin(XMLPlugin.producingJUnitFormat('artifacts/results.xml'))
+            runner.addPlugin(CodeCoveragePlugin.forFolder(pwd,'IncludingSubfolders',true, ...
+            'Producing',CoberturaFormat('artifacts/cobertura.xml')))
+            results = runner.run(suite)
+            assertSuccess(results)
+          BLOCK
+          matlab -batch runAllTests
+
+      - name: Upload Test Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Test-Artifacts
+          path: |
+            ${{ github.workspace }}/artifacts/results.xml
+            ${{ github.workspace }}/artifacts/cobertura.xml
+
+      - name: Build MATLAB
+        run: |
+          matlab -batch "buildtool"
+          
