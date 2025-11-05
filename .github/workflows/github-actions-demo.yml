@@ -1,90 +1,33 @@
-name: CI
+name: cdxgen CI/CD
 
 on:
   push:
     branches:
-      - main
-  pull_request:
+    - main
 
 jobs:
-  sbom_and_scan:
-    runs-on: ubuntu-latest
-    services:
-      docker:
-        image: docker:19.03.12
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Generate SBOM using Syft
-        run: |
-          docker run --rm -v ${{ github.workspace }}:/project ghcr.io/anchore/syft:latest mathworks/matlab:latest -o json > ${{ github.workspace }}/sbom.json
-
-      - name: Vulnerability Scan using Grype
-        run: |
-          docker run --rm -v ${{ github.workspace }}:/project ghcr.io/anchore/syft:latest sbom:/project/sbom.json -o json > ${{ github.workspace }}/vulnerabilities.json
-      
-      - name: Upload SBOM and Vulnerabilities
-        uses: actions/upload-artifact@v4
-        with:
-          name: SBOM-and-Vulnerabilities
-          path: |
-            ${{ github.workspace }}/sbom.json
-            ${{ github.workspace }}/vulnerabilities.json
-
-  run_matlab_commands:
+  generate_cyclonedx_sbom:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
 
-      - name: Setup MATLAB
-        uses: matlab-actions/setup-matlab@v2
+      - name: Node.js setup
+        uses: actions/setup-node@v6.0.0
         with:
-          license: ${{ secrets.MLM_LICENSE_FILE }}  # Create secret configured with your own license number
+          node-version: latest
 
-      - name: Run MATLAB command
+      - name: Install cdxgen
+        run: npm install -g @cyclonedx/cdxgen
+
+      - name: Generate SBOM for all languages
         run: |
-          matlab -batch "mycommand"
+          cdxgen -r -o cdxgen-sbom.json
 
-      - name: Run MATLAB tests
-        run: |
-          matlab -batch "results = runtests('IncludeSubfolders',true); assertSuccess(results);"
-
-      - name: Generate Test Artifacts
-        run: |
-          echo 'Creating and running MATLAB tests with Artifacts'
-          cat <<- 'BLOCK' > runAllTests.m
-            import matlab.unittest.TestRunner
-            import matlab.unittest.Verbosity
-            import matlab.unittest.plugins.CodeCoveragePlugin
-            import matlab.unittest.plugins.XMLPlugin
-            import matlab.unittest.codecoverage.CoberturaFormat
-            suite = testsuite(pwd, 'IncludeSubfolders',true);
-            [~,~] = mkdir('artifacts')
-            runner = TestRunner.withTextOutput('OutputDetail',Verbosity.Detailed);
-            runner.addPlugin(XMLPlugin.producingJUnitFormat('artifacts/results.xml'))
-            runner.addPlugin(CodeCoveragePlugin.forFolder(pwd,'IncludingSubfolders',true, ...
-            'Producing',CoberturaFormat('artifacts/cobertura.xml')))
-            results = runner.run(suite)
-            assertSuccess(results)
-          BLOCK
-          matlab -batch runAllTests
-
-      - name: Upload Test Artifacts
-        uses: actions/upload-artifact@v4
+      - name: Upload cdxgen SBOM as an artifact
+        uses: actions/upload-artifact@v5.0.0
         with:
-          name: Test-Artifacts
-          path: |
-            ${{ github.workspace }}/artifacts/results.xml
-            ${{ github.workspace }}/artifacts/cobertura.xml
-
-      - name: Build MATLAB
-        run: |
-          matlab -batch "buildtool"
+          name: sbom
+          path: cdxgen-sbom.json
           
