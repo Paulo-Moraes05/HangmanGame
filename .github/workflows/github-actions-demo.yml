@@ -25,6 +25,9 @@ jobs:
         run: |
           cdxgen -r -o cdxgen-sbom.json
 
+      - name: Modify cdxgen SBOM using script
+        run: node scripts/modify-sbom.js
+
       - name: Upload cdxgen SBOM as an artifact
         uses: actions/upload-artifact@v5.0.0
         with:
