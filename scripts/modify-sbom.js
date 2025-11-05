@@ -1,6 +1,6 @@
 import fs from "fs";
 
-const sbom = JSON.parse(fs.readFileSync("sbom.json", "utf8"));
+const sbom = JSON.parse(fs.readFileSync("cdxgen-sbom.json", "utf8"));
 
 for (const comp of sbom.components || []) {
   comp.properties = comp.properties || [];
