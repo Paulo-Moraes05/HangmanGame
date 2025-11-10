@@ -1,4 +1,4 @@
-  name: cdxgen CI/CD
+name: cdxgen CI/CD
 
 on:
   push:
