@@ -22,7 +22,7 @@ jobs:
         run: npm install -g @cyclonedx/cdxgen
 
       - name: Install CycloneDX CLI
-        run: npm install -g @cyclonedx/cyclonedx-cli
+        run: npm install -g @cyclonedx/cli
 
       - name: Generate SBOM for all languages
         run: cdxgen -r -o cdxgen-sbom.json
