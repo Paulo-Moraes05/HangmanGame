@@ -22,13 +22,22 @@ jobs:
         run: npm install -g @cyclonedx/cdxgen
 
       - name: Install CycloneDX CLI
-        run: npm install -g @cyclonedx/cli
+        run: |
+          VERSION=0.29.1
+          OS=linux  # adjust if windows/mac
+          ARCH=x64  # adjust if arm etc
+          FILENAME=cyclonedx-cli-${VERSION}-${OS}-${ARCH}.zip   # may have other extensions for MacOS or Windows
+          wget https://github.com/CycloneDX/cyclonedx-cli/releases/download/v${VERSION}/${FILENAME}
+          unzip ${FILENAME}
+          chmod +x cyclonedx-cli
+          sudo mv cyclonedx-cli /usr/local/bin/cyclonedx
+          cyclonedx --version
 
       - name: Generate SBOM for all languages
         run: cdxgen -r -o cdxgen-sbom.json
       
       - name: Enrich SBOM with Metadata
-        run: cyclonedx-cli add files --input-file cdxgen-sbom.json --output-file cdxgen-enriched.json --base-path . --include "*"
+        run: cyclonedx add files --input-file cdxgen-sbom.json --output-file cdxgen-enriched.json --base-path . --include "*"
 
       - name: Modify cdxgen SBOM using script
         run: node scripts/modify-sbom.js
