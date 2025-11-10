@@ -28,8 +28,6 @@ jobs:
           ARCH=x64  # adjust if arm etc
           FILENAME=cyclonedx-${OS}-${ARCH}   # may have other extensions for MacOS or Windows
           wget https://github.com/CycloneDX/cyclonedx-cli/releases/download/v${VERSION}/${FILENAME}
-          chmod +x cyclonedx-cli
-          sudo mv cyclonedx-cli /usr/local/bin/cyclonedx
           cyclonedx --version
 
       - name: Generate SBOM for all languages
