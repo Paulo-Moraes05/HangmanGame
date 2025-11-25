@@ -56,7 +56,7 @@ jobs:
         with:
           sbom: cyclonedx-syft-sbom.json
           severity-cutoff: critical
-          format: sarif
+          output-format: sarif
 
       - name: Modify cdxgen SBOM using script
         run: node scripts/modify-sbom.js
