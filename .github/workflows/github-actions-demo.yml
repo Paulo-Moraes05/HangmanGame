@@ -57,6 +57,7 @@ jobs:
           sbom: cyclonedx-syft-sbom.json
           severity-cutoff: critical
           output-format: sarif
+          output-file: results-syft-sbom.sarif
 
       - name: Modify cdxgen SBOM using script
         run: node scripts/modify-sbom.js
@@ -76,5 +77,5 @@ jobs:
       - name: Upload scanned Syft SBOM using SARIF format
         uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: results.sarif
+          sarif_file: results-syft-sbom.sarif
           
