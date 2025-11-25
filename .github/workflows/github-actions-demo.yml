@@ -6,8 +6,11 @@ on:
     - main
 
 jobs:
-  generate_cyclonedx_sbom:
+  generate_and_modify_cyclonedx_sbom:
     runs-on: ubuntu-latest
+
+    permissions:
+      security-events: write
 
     steps:
       - name: Checkout repository
@@ -32,11 +35,24 @@ jobs:
           sudo mv ${FILENAME} /usr/local/bin/cyclonedx
           cyclonedx --version
 
-      - name: Generate SBOM for all languages
+      - name: Generate cdxgen SBOM for all supported languages
         run: cdxgen -r -o cdxgen-sbom.json
       
       - name: Enrich SBOM with Metadata
         run: cyclonedx add files --input-file cdxgen-sbom.json --output-file cdxgen-enriched.json --base-path . --include "*"
+
+      - name: Generate Syft SBOM for languages not supported by cdxgen
+        uses: anchore/sbom-action@v0.15.11
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: cyclonedx-syft-sbom.json
+
+      - name: Scan for vulnerabilities in the Syft SBOM using Grype
+        uses: anchore/scan-action@v6
+        with:
+          sbom: cyclonedx-syft-sbom.json
+          severity-cutoff: critical
 
       - name: Modify cdxgen SBOM using script
         run: node scripts/modify-sbom.js
@@ -46,4 +62,15 @@ jobs:
         with:
           name: sbom
           path: sbom-custom.json
+
+      - name: Upload syft SBOM as an artifact
+        uses: actions/upload-artifact@v5.0.0
+        with:
+          name: sbom
+          path: cyclonedx-syft-sbom.json
+
+      - name: Upload scanned Syft SBOM using SARIF format
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif-file: results-sbom.sarif
           
