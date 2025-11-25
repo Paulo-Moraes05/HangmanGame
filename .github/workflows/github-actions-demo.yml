@@ -46,7 +46,7 @@ jobs:
         with:
           path: .
           format: cyclonedx-json
-          output-file: cyclonedx-syft-sbom.json
+          output: cyclonedx-syft-sbom.json
 
       - name: Scan for vulnerabilities in the Syft SBOM using Grype
         uses: anchore/scan-action@v6
