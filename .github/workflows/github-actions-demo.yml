@@ -60,13 +60,13 @@ jobs:
       - name: Upload cdxgen SBOM as an artifact
         uses: actions/upload-artifact@v5.0.0
         with:
-          name: sbom
+          name: cdxgen-sbom
           path: sbom-custom.json
 
       - name: Upload syft SBOM as an artifact
         uses: actions/upload-artifact@v5.0.0
         with:
-          name: sbom
+          name: syft-sbom
           path: cyclonedx-syft-sbom.json
 
       - name: Upload scanned Syft SBOM using SARIF format
