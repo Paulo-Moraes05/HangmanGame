@@ -51,8 +51,8 @@ jobs:
           output-file: cyclonedx-syft-sbom.json
           upload-artifact: false
 
-      - name: Convert Syft SBOM to CycloneDX 1.6
-        run: cyclonedx convert --input-file cyclonedx-syft-sbom.json --output-file cyclonedx-syft-sbom-1.6.json --input-format json --output-format json --spec-version 1.6
+      - name: Convert Syft SBOM from CycloneDX 1.5 to CycloneDX 1.6
+        run: cyclonedx convert --input-file cyclonedx-syft-sbom.json --output-file cyclonedx-syft-sbom-1.6.json --input-format json --output-format json --output-version v1_6
 
       - name: Scan for vulnerabilities in the Syft SBOM using Grype
         uses: anchore/scan-action@v6
