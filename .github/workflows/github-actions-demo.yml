@@ -51,10 +51,18 @@ jobs:
           output-file: cyclonedx-syft-sbom.json
           upload-artifact: false
 
+      - name: Convert Syft SBOM to CycloneDX 1.6
+        run: cyclonedx convert \
+                --input-file cyclonedx-syft-sbom.json \
+                --output-file cyclonedx-syft-sbom-1.6.json \
+                --input-format json \
+                --output-format json \
+                --spec-version 1.6
+
       - name: Scan for vulnerabilities in the Syft SBOM using Grype
         uses: anchore/scan-action@v6
         with:
-          sbom: cyclonedx-syft-sbom.json
+          sbom: cyclonedx-syft-sbom-1.6.json
           severity-cutoff: critical
           output-format: sarif
           output-file: results-syft-sbom.sarif
@@ -62,17 +70,28 @@ jobs:
       - name: Modify cdxgen SBOM using script
         run: node scripts/modify-sbom.js
 
+      - name: Sign cdxgen SBOM with auto-generated keys
+        env:
+          SBOM_SIGN_ALGORITHM: RS512
+          SBOM_SIGN_PRIVATE_KEY: cdxgen-private.pem
+          SBOM_SIGN_PUBLIC_KEY: cdxgen-public.pem
+        run: |
+          cyclonedx sign \
+            --input-file sbom-custom.json \
+            --output-file sbom-custom-signed.json \
+            --generate-key-and-sign
+
       - name: Upload cdxgen SBOM as an artifact
         uses: actions/upload-artifact@v5.0.0
         with:
           name: cdxgen-sbom
-          path: sbom-custom.json
+          path: sbom-custom-signed.json
 
       - name: Upload syft SBOM as an artifact
         uses: actions/upload-artifact@v5.0.0
         with:
           name: syft-sbom
-          path: cyclonedx-syft-sbom.json
+          path: cyclonedx-syft-sbom-1.6.json
 
       - name: Upload scanned Syft SBOM using SARIF format
         uses: github/codeql-action/upload-sarif@v4
