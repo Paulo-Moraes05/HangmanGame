@@ -70,11 +70,7 @@ jobs:
           SBOM_SIGN_ALGORITHM: RS512
           SBOM_SIGN_PRIVATE_KEY: cdxgen-private.pem
           SBOM_SIGN_PUBLIC_KEY: cdxgen-public.pem
-        run: |
-          cyclonedx sign \
-            --input-file sbom-custom.json \
-            --output-file sbom-custom-signed.json \
-            --generate-key-and-sign
+        run: cdxgen -i sbom-custom.json -o sbom-custom-signed.json --generate-key-and-sign
 
       - name: Upload cdxgen SBOM as an artifact
         uses: actions/upload-artifact@v5.0.0
