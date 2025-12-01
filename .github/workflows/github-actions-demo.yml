@@ -66,13 +66,13 @@ jobs:
         run: node scripts/modify-sbom.js
 
       - name: Generate RSA Public/Private keys
-        run: |
-          openssl genpkey -algorithm RSA -out cdxgen-private.gem -pkeyopt rsa_keygen_bits:4096
-          openssl rsa -in cdxgen-private.gem -pubout -out cdxgen-public.gem
+        run: cyclonedx keygen   # outputs by default to public.key and private.key, use --private-key-file and --public-key-file to change the file name
 
       - name: Sign modified cdxgen SBOM with CycloneDX CLI
-        run: cyclonedx sign --input-file sbom-custom.json --output-file sbom-custom-signed.json --private-key cdxgen-private.gem --algorithm RS512
-        
+        run: cyclonedx sign bom sbom-custom.json --key-file=private.key   # use the private key generated
+
+      - name: Verify SBOM signature to ensure integrity
+        run: cyclonedx verify all sbom-custom.json --key-file=public.key   # use the public key generated to decrypt and verify the SBOM signature
 
       - name: Upload cdxgen SBOM as an artifact
         uses: actions/upload-artifact@v5.0.0
