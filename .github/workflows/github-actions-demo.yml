@@ -72,10 +72,10 @@ jobs:
         run: cosign generate-key-pair --output-key-prefix sbom  # generates keys in sbom.key (private) and sbom.pub (public)
 
       - name: Sign cdxgen SBOM
-        run: cosign sign-blob --key sbom.key --output-signature sbom-custom-signed.sig sbom-custom.json
+        run: cosign sign-blob --key sbom.key --bundle sbom-custom-signed.sig sbom-custom.json
 
       - name: Verify SBOM signature
-        run: cosign verify-blob --key sbom.pub --signature sbom-custom-signed.sig sbom-custom.json
+        run: cosign verify-blob --key sbom.pub --bundle sbom-custom-signed.sig sbom-custom.json
 
       - name: Upload cdxgen SBOM as an artifact
         uses: actions/upload-artifact@v5.0.0
