@@ -65,20 +65,26 @@ jobs:
       - name: Modify cdxgen SBOM using script
         run: node scripts/modify-sbom.js
 
-      - name: Generate RSA Public/Private keys
-        run: cyclonedx keygen   # outputs by default to public.key and private.key, use --private-key-file and --public-key-file to change the file name
+      - name: Install cosign  # using the GitHub embedded version
+        run: sigstore/cosign-installer@v4.0.0
 
-      - name: Sign modified cdxgen SBOM with CycloneDX CLI
-        run: cyclonedx sign bom sbom-custom.json --key-file=private.key   # use the private key generated
+      - name: Generate RSA key pair (public/private)
+        run: cosign generate-key-pair --output-key-prefix sbom  # generates keys in sbom.key (private) and sbom.pub (public)
 
-      - name: Verify SBOM signature to ensure integrity
-        run: cyclonedx verify all sbom-custom.json --key-file=public.key   # use the public key generated to decrypt and verify the SBOM signature
+      - name: Sign cdxgen SBOM
+        run: cosign sign-blob --key sbom.key --output-signature sbom-custom-signed.sig sbom-custom.json
+
+      - name: Verify SBOM signature
+        run: cosign verify-blob --key sbom.pub --signature sbom-custom-signed.sig sbom-custom.json
 
       - name: Upload cdxgen SBOM as an artifact
         uses: actions/upload-artifact@v5.0.0
         with:
-          name: cdxgen-sbom
-          path: sbom-custom-signed.json
+          name: cdxgen-sbom-signed
+          path: | 
+            sbom-custom.json
+            sbom-custom-signed.sig
+            sbom.pub
 
       - name: Upload syft SBOM as an artifact
         uses: actions/upload-artifact@v5.0.0
