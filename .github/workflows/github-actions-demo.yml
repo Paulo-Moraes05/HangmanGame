@@ -40,7 +40,7 @@ jobs:
       - name: Generate cdxgen SBOM for all supported languages
         run: cdxgen -r -o cdxgen-sbom.json
       
-      - name: Enrich SBOM with Metadata
+      - name: Enrich cdxgen SBOM with Metadata
         run: cyclonedx add files --input-file cdxgen-sbom.json --output-file cdxgen-enriched.json --base-path . --include "*"
 
       - name: Generate Syft SBOM for languages not supported by cdxgen
@@ -54,6 +54,9 @@ jobs:
       - name: Convert Syft SBOM from CycloneDX 1.5 to CycloneDX 1.6
         run: cyclonedx convert --input-file cyclonedx-syft-sbom.json --output-file cyclonedx-syft-sbom-1.6.json --input-format json --output-format json --output-version v1_6
 
+      - name: Enrich Syft SBOM with Metadata
+        run: cyclonedx add files --input-file cyclonedx-syft-sbom-1.6.json --output-file syft-enriched.json --base-path . --include "*"
+
       - name: Scan for vulnerabilities in the Syft SBOM using Grype
         uses: anchore/scan-action@v6
         with:
@@ -62,7 +65,10 @@ jobs:
           output-format: sarif
           output-file: results-syft-sbom.sarif
 
-      - name: Modify cdxgen SBOM using script
+      - name: Merge cdxgen and Syft SBOMs
+        run: cyclonedx merge --input-files cdxgen-enriched.json syft-enriched.json --output-file merged-cyclonedx-sbom.json --input-format json --output-format json --output-version v1_6
+
+      - name: Modify SBOM using script
         run: node scripts/modify-sbom.js
 
       - name: Install cosign  # using the GitHub embedded version
