@@ -74,10 +74,10 @@ jobs:
       - name: Install cosign  # using the GitHub embedded version
         uses: sigstore/cosign-installer@v4.0.0
 
-      - name: Generate RSA key pair (public/private)
+      - name: Generate key pair (public/private)
         run: cosign generate-key-pair --output-key-prefix sbom  # generates keys in sbom.key (private) and sbom.pub (public)
 
-      - name: Sign cdxgen SBOM
+      - name: Sign merged SBOM
         run: cosign sign-blob --yes --key sbom.key --bundle sbom-custom-signed.sig sbom-custom.json
 
       - name: Verify SBOM signature
