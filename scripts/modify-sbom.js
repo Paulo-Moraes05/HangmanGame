@@ -18,7 +18,7 @@ function pickComponentTaxonomy(comp) {
   return "bsi:component:structured";
 }
 
-function getPotentialFilename(comp) {
+function getFilename(comp) {
   // if comp.properties is an array, use it, otherwise use an empty array
   const props = Array.isArray(comp.properties) ? comp.properties : [];
   const filenameProp =
@@ -50,8 +50,8 @@ function setTaxonomy(comp, taxonomy) {
 function ensureFileProperty(comp) {
   if (!comp) return;
 
-  const filenameLike = getPotentialFilename(comp);
-  const taxonomy = pickTaxonomyFromString(filenameLike);
+  const filenameLike = getFilename(comp);
+  const taxonomy = pickComponentTaxonomy(filenameLike);
 
   // set taxonomy for all components
   setTaxonomy(comp, taxonomy);
