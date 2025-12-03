@@ -8,7 +8,7 @@ const outPath = "sbom-custom.json";
 const sbom = JSON.parse(fs.readFileSync(sbomPath, "utf8"));
 
 function pickComponentTaxonomy(comp) {
-  const val = (s || "").toLowerCase();
+  const val = (comp || "").toLowerCase();
   
   if (/\.(tgz|tar|zip|arc|jar|war)$/i.test(val)) return "bsi:component:archive";
   if (/\.(exe|apk|app|scr|bin)$/i.test(val)) return "bsi:component:executable";
@@ -29,8 +29,10 @@ function getFilename(comp) {
         p.name.startsWith("syft:location")
     ) || null;
 
+  // if property exists, return it as filename
   if (filenameProp?.value) return filenameProp.value;
 
+  // if component is a file, return the file name
   if (comp.type === "file") return comp.name || "";
 
   return comp.name || "";
