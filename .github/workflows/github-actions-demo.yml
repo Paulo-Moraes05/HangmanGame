@@ -83,17 +83,11 @@ jobs:
       - name: Verify SBOM using CycloneDX CLI
         run: cyclonedx verify all sbom-custom.xml --key-file sbom-public.key
 
-      - name: Convert SBOM back to JSON format
-        run: cyclonedx convert --input-file sbom-custom.xml --output-file sbom-custom.json --input-format xml --output-format json
-
       - name: Upload cdxgen SBOM as an artifact
         uses: actions/upload-artifact@v5.0.0
         with:
           name: cdxgen-sbom-signed
-          path: | 
-            sbom-custom.json
-            sbom-custom-signed.sig
-            sbom.pub
+          path: sbom-custom.xml
 
       - name: Upload syft SBOM as an artifact
         uses: actions/upload-artifact@v5.0.0
